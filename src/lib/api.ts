@@ -61,6 +61,11 @@ export interface Insight {
   action?: string;
   confidence: number;
   timestamp: string;
+  reasoning?: string;
+  rootCause?: string;
+  correlatedEvents?: string[];
+  impactScore?: number;
+  autoRemediationAvailable?: boolean;
 }
 
 export interface Alert {
@@ -118,6 +123,15 @@ export async function fetchInsights(): Promise<{
     recommendation: number;
     info: number;
     total: number;
+    avgConfidence?: number;
+    avgImpactScore?: number;
+    autoRemediationReady?: number;
+  };
+  engine?: {
+    name: string;
+    version: string;
+    capabilities: string[];
+    algorithms: Record<string, string>;
   };
 }> {
   const { data, error } = await supabase.functions.invoke('insights');

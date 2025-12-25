@@ -2,7 +2,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { InsightCard } from '@/components/dashboard/InsightCard';
 import { useInsights } from '@/hooks/useApiData';
 import { useState } from 'react';
-import { AlertCircle, AlertTriangle, Info, Lightbulb, Loader2, RefreshCw } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Info, Lightbulb, Loader2, RefreshCw, Brain, Bot, Cpu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -15,6 +15,7 @@ export default function Insights() {
 
   const insights = data?.insights || [];
   const summary = data?.summary;
+  const engine = data?.engine;
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['insights'] });
@@ -64,13 +65,61 @@ export default function Insights() {
       subtitle="Autonomous recommendations and root cause analysis"
     >
       <div className="space-y-6">
-        {/* Refresh Button */}
-        <div className="flex justify-end">
-          <Button variant="outline" size="sm" onClick={handleRefresh} className="gap-2">
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
+        {/* Engine Info Banner */}
+        {engine && (
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-lg bg-primary/10 p-2">
+                <Brain className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-foreground">{engine.name} v{engine.version}</h3>
+                  <Button variant="outline" size="sm" onClick={handleRefresh} className="gap-2">
+                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {engine.capabilities?.map((cap: string, idx: number) => (
+                    <span key={idx} className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                      <Cpu className="h-3 w-3" />
+                      {cap}
+                    </span>
+                  ))}
+                </div>
+                {summary?.autoRemediationReady !== undefined && summary.autoRemediationReady > 0 && (
+                  <div className="mt-2 flex items-center gap-2 text-xs text-chart-2">
+                    <Bot className="h-4 w-4" />
+                    {summary.autoRemediationReady} insights have auto-remediation available
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Stats Row */}
+        {summary && (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-lg border border-border bg-card p-3 text-center">
+              <div className="text-2xl font-bold text-foreground">{summary.total}</div>
+              <div className="text-xs text-muted-foreground">Total Insights</div>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3 text-center">
+              <div className="text-2xl font-bold text-primary">{summary.avgConfidence || 0}%</div>
+              <div className="text-xs text-muted-foreground">Avg Confidence</div>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3 text-center">
+              <div className="text-2xl font-bold text-destructive">{summary.critical}</div>
+              <div className="text-xs text-muted-foreground">Critical</div>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3 text-center">
+              <div className="text-2xl font-bold text-chart-2">{summary.autoRemediationReady || 0}</div>
+              <div className="text-xs text-muted-foreground">Auto-Fix Ready</div>
+            </div>
+          </div>
+        )}
 
         {/* Filter Tabs */}
         <div className="flex flex-wrap gap-2">

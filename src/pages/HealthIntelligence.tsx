@@ -1,28 +1,37 @@
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ComponentCard } from '@/components/dashboard/ComponentCard';
-import { componentHealth } from '@/lib/mockData';
-import { Filter, Search, Grid, List } from 'lucide-react';
+import { useHealthMetrics } from '@/hooks/useApiData';
+import { Filter, Search, Grid, List, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 type FilterType = 'all' | 'healthy' | 'degrading' | 'critical';
 
 export default function HealthIntelligence() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const queryClient = useQueryClient();
+  
+  const { data, isLoading, error } = useHealthMetrics();
+  const components = data?.components || [];
 
-  const filteredComponents = componentHealth.filter((component) => {
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['health-metrics'] });
+  };
+
+  const filteredComponents = components.filter((component) => {
     const matchesFilter = filter === 'all' || component.status === filter;
     const matchesSearch = component.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
   const statusCounts = {
-    all: componentHealth.length,
-    healthy: componentHealth.filter((c) => c.status === 'healthy').length,
-    degrading: componentHealth.filter((c) => c.status === 'degrading').length,
-    critical: componentHealth.filter((c) => c.status === 'critical').length,
+    all: components.length,
+    healthy: components.filter((c) => c.status === 'healthy').length,
+    degrading: components.filter((c) => c.status === 'degrading').length,
+    critical: components.filter((c) => c.status === 'critical').length,
   };
 
   return (
@@ -31,6 +40,14 @@ export default function HealthIntelligence() {
       subtitle="Component-level health monitoring and analysis"
     >
       <div className="space-y-6">
+        {/* Refresh Button */}
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" onClick={handleRefresh} className="gap-2">
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
+
         {/* Summary Cards */}
         <div className="grid gap-4 sm:grid-cols-4">
           {(['all', 'healthy', 'degrading', 'critical'] as FilterType[]).map((status) => (
@@ -45,7 +62,7 @@ export default function HealthIntelligence() {
             >
               <p className="text-sm capitalize text-muted-foreground">{status}</p>
               <p className="mt-1 font-mono text-2xl font-bold text-foreground">
-                {statusCounts[status]}
+                {isLoading ? '--' : statusCounts[status]}
               </p>
             </button>
           ))}
@@ -76,19 +93,25 @@ export default function HealthIntelligence() {
         </div>
 
         {/* Component Grid */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredComponents.map((component, index) => (
-            <div
-              key={component.id}
-              className="animate-slide-up"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <ComponentCard component={component} />
-            </div>
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredComponents.map((component, index) => (
+              <div
+                key={component.id}
+                className="animate-slide-up"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <ComponentCard component={component} />
+              </div>
+            ))}
+          </div>
+        )}
 
-        {filteredComponents.length === 0 && (
+        {!isLoading && filteredComponents.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="mb-4 rounded-full bg-secondary p-4">
               <Search className="h-6 w-6 text-muted-foreground" />

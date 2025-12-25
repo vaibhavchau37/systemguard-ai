@@ -11,7 +11,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { Shield, Award, Target, TrendingUp, Loader2, RefreshCw } from 'lucide-react';
+import { Shield, Award, Target, TrendingUp, Loader2, RefreshCw, Code2, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -22,6 +22,7 @@ export default function TrustReliability() {
   const metrics = data?.metrics;
   const factors = data?.factors || [];
   const history = data?.history || [];
+  const algorithm = (data as any)?.algorithm;
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['trust-score'] });
@@ -143,43 +144,72 @@ export default function TrustReliability() {
               </ResponsiveContainer>
             </div>
 
-            {/* Trust Factors */}
-            <div>
-              <h2 className="mb-4 text-lg font-semibold text-foreground">Trust Factor Breakdown</h2>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {factors.map((factor, index) => {
-                  const Icon = iconMap[factor.name] || Shield;
-                  return (
-                    <div
-                      key={factor.name}
-                      className="metric-card animate-slide-up"
-                      style={{ animationDelay: `${index * 100}ms` }}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                            <Icon className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <h3 className="text-sm font-medium text-foreground">{factor.name}</h3>
-                            <p className="text-xs text-muted-foreground">{factor.description}</p>
-                          </div>
-                        </div>
-                        <span
-                          className={`font-mono text-2xl font-bold ${
-                            factor.score >= 80
-                              ? 'text-success'
-                              : factor.score >= 60
-                              ? 'text-warning'
-                              : 'text-destructive'
-                          }`}
-                        >
-                          {factor.score}
-                        </span>
+        {/* Algorithm Explanation */}
+        {algorithm && (
+          <div className="metric-card border-primary/20 bg-primary/5">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <Calculator className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-foreground">{algorithm.name}</h3>
+                <p className="mt-1 text-xs text-muted-foreground">Version {algorithm.version}</p>
+                <div className="mt-3 rounded-lg bg-card/80 p-3">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Code2 className="h-3.5 w-3.5" />
+                    <span>Formula</span>
+                  </div>
+                  <code className="mt-1 block font-mono text-xs text-primary">
+                    {algorithm.formula}
+                  </code>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Trust Factors */}
+        <div>
+          <h2 className="mb-4 text-lg font-semibold text-foreground">Trust Factor Breakdown</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {factors.map((factor: any, index: number) => {
+              const Icon = iconMap[factor.name] || Shield;
+              return (
+                <div
+                  key={factor.name}
+                  className="metric-card animate-slide-up"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                        <Icon className="h-5 w-5 text-primary" />
                       </div>
-                      <div className="mt-4 h-2 overflow-hidden rounded-full bg-secondary">
-                        <div
-                          className={`h-full rounded-full transition-all duration-1000 ${
+                      <div>
+                        <h3 className="text-sm font-medium text-foreground">{factor.name}</h3>
+                        <p className="text-xs text-muted-foreground">{factor.description}</p>
+                      </div>
+                    </div>
+                    <span
+                      className={`font-mono text-2xl font-bold ${
+                        factor.score >= 80
+                          ? 'text-success'
+                          : factor.score >= 60
+                          ? 'text-warning'
+                          : 'text-destructive'
+                      }`}
+                    >
+                      {factor.score}
+                    </span>
+                  </div>
+                  {factor.formula && (
+                    <div className="mt-3 rounded bg-secondary/50 px-2 py-1">
+                      <code className="font-mono text-xs text-muted-foreground">{factor.formula}</code>
+                    </div>
+                  )}
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary">
+                    <div
+                      className={`h-full rounded-full transition-all duration-1000 ${
                             factor.score >= 80
                               ? 'bg-success'
                               : factor.score >= 60
